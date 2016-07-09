@@ -9,8 +9,14 @@
 class Rule
 {
 private:
-	using RuleType = std::vector<bool>;
+	using RuleType = std::vector<int>;
 	using NumList = std::vector<int>;
+
+	enum Boolean
+	{
+		False = 0,
+		True = 1
+	};
 
 
 public:
@@ -29,6 +35,7 @@ public:
 	void setMaxNearCount(int maxNearCount);
 	bool checkSurvive(int nearCount) const;
 	bool checkBirth(int nearCount) const;
+	bool checkAntiBirth(int nearCount) const;
 	void setSurvive(const NumList& rule);
 	void setBirth(const NumList& rule);
 
@@ -36,5 +43,9 @@ public:
 public:
 	void accumulate(const Rule& other);
 	Rule combine(const Rule& other) const;
+
+
+public:
+	bool equals(const Rule& right) const;
 };
 

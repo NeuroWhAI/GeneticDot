@@ -42,6 +42,9 @@
     <ClCompile Include="DrawableWorld.cpp">
       <Filter>GeneticDot</Filter>
     </ClCompile>
+    <ClCompile Include="CellPool.cpp">
+      <Filter>GeneticDot</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MainScene.h">
@@ -60,6 +63,9 @@
       <Filter>GeneticDot</Filter>
     </ClInclude>
     <ClInclude Include="DrawableWorld.h">
+      <Filter>GeneticDot</Filter>
+    </ClInclude>
+    <ClInclude Include="CellPool.h">
       <Filter>GeneticDot</Filter>
     </ClInclude>
   </ItemGroup>

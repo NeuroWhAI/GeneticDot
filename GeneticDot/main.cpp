@@ -13,6 +13,7 @@ int main()
 
 	auto window = caFactory->createWindow();
 	window->create(caDraw::Size(1024, 768), caUtil::String("Genetic Dot"));
+	window->disableFramerate();
 
 
 	auto sceneManager = canew<caUtil::SceneManager>();

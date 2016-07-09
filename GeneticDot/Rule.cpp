@@ -16,9 +16,9 @@ Rule::Rule()
 
 Rule::Rule(int maxNearCount)
 	: m_maxNearCount(maxNearCount + 1)
-	, m_survive(static_cast<size_t>(maxNearCount + 1), false)
-	, m_birth(static_cast<size_t>(maxNearCount + 1), false)
-	, m_antiBirth(static_cast<size_t>(maxNearCount + 1), false)
+	, m_survive(static_cast<size_t>(maxNearCount + 1), False)
+	, m_birth(static_cast<size_t>(maxNearCount + 1), False)
+	, m_antiBirth(static_cast<size_t>(maxNearCount + 1), False)
 {
 
 }
@@ -40,9 +40,9 @@ void Rule::setMaxNearCount(int maxNearCount)
 
 	m_maxNearCount = maxNearCount + 1;
 
-	m_survive.resize(static_cast<size_t>(maxNearCount + 1), false);
-	m_birth.resize(static_cast<size_t>(maxNearCount + 1), false);
-	m_antiBirth.resize(static_cast<size_t>(maxNearCount + 1), false);
+	m_survive.resize(static_cast<size_t>(maxNearCount + 1), False);
+	m_birth.resize(static_cast<size_t>(maxNearCount + 1), False);
+	m_antiBirth.resize(static_cast<size_t>(maxNearCount + 1), False);
 }
 
 
@@ -53,7 +53,7 @@ bool Rule::checkSurvive(int nearCount) const
 #endif
 
 
-	return m_survive[nearCount];
+	return (m_survive[nearCount] != False);
 }
 
 
@@ -64,14 +64,25 @@ bool Rule::checkBirth(int nearCount) const
 #endif
 
 
-	return m_birth[nearCount];
+	return (m_birth[nearCount] != False);
+}
+
+
+bool Rule::checkAntiBirth(int nearCount) const
+{
+#ifdef _DEBUG
+	assert(nearCount < m_maxNearCount && nearCount >= 0);
+#endif
+
+
+	return (m_antiBirth[nearCount] != False);
 }
 
 
 void Rule::setSurvive(const NumList& rule)
 {
 	m_survive.clear();
-	m_survive.resize(static_cast<size_t>(m_maxNearCount), false);
+	m_survive.resize(static_cast<size_t>(m_maxNearCount), False);
 
 	for (auto nearCount : rule)
 	{
@@ -79,7 +90,7 @@ void Rule::setSurvive(const NumList& rule)
 		assert(nearCount < m_maxNearCount && nearCount >= 0);
 #endif
 
-		m_survive[nearCount] = true;
+		m_survive[nearCount] = True;
 	}
 }
 
@@ -87,10 +98,10 @@ void Rule::setSurvive(const NumList& rule)
 void Rule::setBirth(const NumList& rule)
 {
 	m_birth.clear();
-	m_birth.resize(static_cast<size_t>(m_maxNearCount), false);
+	m_birth.resize(static_cast<size_t>(m_maxNearCount), False);
 
 	m_antiBirth.clear();
-	m_antiBirth.resize(static_cast<size_t>(m_maxNearCount), false);
+	m_antiBirth.resize(static_cast<size_t>(m_maxNearCount), False);
 
 
 	for (auto nearCount : rule)
@@ -101,11 +112,11 @@ void Rule::setBirth(const NumList& rule)
 
 		if (nearCount >= 0)
 		{
-			m_birth[nearCount] = true;
+			m_birth[nearCount] = True;
 		}
 		else
 		{
-			m_antiBirth[-nearCount] = true;
+			m_antiBirth[-nearCount] = True;
 		}
 	}
 }
@@ -146,14 +157,17 @@ Rule Rule::combine(const Rule& other) const
 	const int minSize = std::min(m_maxNearCount, other.m_maxNearCount);
 	const int maxSize = std::max(m_maxNearCount, other.m_maxNearCount);
 
-	Rule temp{ maxSize };
+	Rule temp{ maxSize - 1 };
 
 
 	for (int i = 0; i < minSize; ++i)
 	{
 		temp.m_survive[i] = (m_survive[i] | other.m_survive[i]);
-		temp.m_birth[i] = ((m_birth[i] | other.m_birth[i]) & (!m_antiBirth[i]) & (!other.m_antiBirth[i]));
-		temp.m_antiBirth[i] = (m_antiBirth[i] ^ other.m_antiBirth[i]);
+		if (temp.m_antiBirth[i] == other.m_antiBirth[i])
+			temp.m_birth[i] = ((m_birth[i] & other.m_birth[i]) & (!m_antiBirth[i]) & (!other.m_antiBirth[i]));
+		else
+			temp.m_birth[i] = ((m_birth[i] | other.m_birth[i]) & (!m_antiBirth[i]) & (!other.m_antiBirth[i]));
+		temp.m_antiBirth[i] = (m_antiBirth[i] & other.m_antiBirth[i]);
 	}
 
 
@@ -176,5 +190,37 @@ Rule Rule::combine(const Rule& other) const
 
 
 	return temp;
+}
+
+//###########################################################################
+
+bool Rule::equals(const Rule& right) const
+{
+	if (m_maxNearCount != right.m_maxNearCount)
+	{
+		return false;
+	}
+
+
+	for (int i = 0; i < m_maxNearCount; ++i)
+	{
+		if (m_survive[i] != right.m_survive[i])
+		{
+			return false;
+		}
+
+		if (m_birth[i] != right.m_birth[i])
+		{
+			return false;
+		}
+
+		if (m_antiBirth[i] != right.m_antiBirth[i])
+		{
+			return false;
+		}
+	}
+
+
+	return true;
 }
 

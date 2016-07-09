@@ -9,6 +9,7 @@
 
 
 World::World()
+	: m_cellPool(64)
 {
 
 }
@@ -36,12 +37,6 @@ void World::initialize(int boardSize)
 
 void World::update()
 {
-	std::vector<size_t> deathList;
-
-	std::vector<Point> birthList;
-	std::vector<const Gene*> birthInfoList;
-
-
 	for (size_t c = 0; c < m_cellList.size(); ++c)
 	{
 		const auto& center = m_cellList[c];
@@ -70,47 +65,59 @@ void World::update()
 			int nY = nearY[n];
 			int nX = nearX[n];
 
-			if (nY >= 0 && static_cast<size_t>(nY) < m_cellBoard.size()
-				&& nX >= 0 && static_cast<size_t>(nX) < m_cellBoard[nY].size())
+			if (nY < 0)
+				nY += static_cast<int>(m_cellBoard.size());
+			else if (static_cast<size_t>(nY) >= m_cellBoard.size())
+				nY -= static_cast<int>(m_cellBoard.size());
+
+			if (nX < 0)
+				nX += static_cast<int>(m_cellBoard[nY].size());
+			else if (static_cast<size_t>(nX) >= m_cellBoard[nY].size())
+				nX -= static_cast<int>(m_cellBoard[nY].size());
+
+			if (m_cellBoard[nY][nX] != nullptr)
 			{
-				if (m_cellBoard[nY][nX] != nullptr)
+				++nearCount;
+			}
+			else
+			{
+				// 죽어있는 인접 셀의 인접 셀을 기준으로 생사 결정
+
+				int nearY2[8] = {
+					nY - 1, nY - 1, nY - 1, nY, nY + 1, nY + 1, nY + 1, nY
+				};
+				int nearX2[8] = {
+					nX - 1, nX, nX + 1, nX + 1, nX + 1, nX, nX - 1, nX - 1
+				};
+
+				int nearCount2 = 0;
+
+				for (int n2 = 0; n2 < 8; ++n2)
 				{
-					++nearCount;
+					int nY2 = nearY2[n2];
+					int nX2 = nearX2[n2];
+
+					if (nY2 < 0)
+						nY2 += static_cast<int>(m_cellBoard.size());
+					else if (static_cast<size_t>(nY2) >= m_cellBoard.size())
+						nY2 -= static_cast<int>(m_cellBoard.size());
+
+					if (nX2 < 0)
+						nX2 += static_cast<int>(m_cellBoard[nY2].size());
+					else if (static_cast<size_t>(nX2) >= m_cellBoard[nY2].size())
+						nX2 -= static_cast<int>(m_cellBoard[nY2].size());
+
+					if (m_cellBoard[nY2][nX2] != nullptr)
+					{
+						++nearCount2;
+					}
 				}
-				else
+
+				// 부활 가능한 상태인 셀은 살아남.
+				if (cell->checkBirth(nearCount2))
 				{
-					// 죽어있는 인접 셀의 인접 셀을 기준으로 생사 결정
-
-					int nearY2[8] = {
-						nY - 1, nY - 1, nY - 1, nY, nY + 1, nY + 1, nY + 1, nY
-					};
-					int nearX2[8] = {
-						nX - 1, nX, nX + 1, nX + 1, nX + 1, nX, nX - 1, nX - 1
-					};
-
-					int nearCount2 = 0;
-
-					for (int n2 = 0; n2 < 8; ++n2)
-					{
-						int nY2 = nearY2[n2];
-						int nX2 = nearX2[n2];
-
-						if (nY2 >= 0 && static_cast<size_t>(nY2) < m_cellBoard.size()
-							&& nX2 >= 0 && static_cast<size_t>(nX2) < m_cellBoard[nY2].size())
-						{
-							if (m_cellBoard[nY2][nX2] != nullptr)
-							{
-								++nearCount2;
-							}
-						}
-					}
-
-					// 부활 가능한 상태인 셀은 살아남.
-					if (cell->checkBirth(nearCount2))
-					{
-						birthList.emplace_back(nX, nY);
-						birthInfoList.emplace_back(cell->getGene());
-					}
+					m_tempBirthList.emplace_back(nX, nY);
+					m_tempBirthInfoList.emplace_back(cell->getGene());
 				}
 			}
 		}
@@ -120,17 +127,17 @@ void World::update()
 		if (cell->checkSurvive(nearCount) == false
 			|| cell->isDie())
 		{
-			deathList.emplace_back(c);
+			m_tempDeathList.emplace_back(c);
 		}
 	}
 
 
 	// 발생한 탄생 이벤트 적용
-	const size_t birthCount = std::min(birthList.size(), birthInfoList.size());
+	const size_t birthCount = std::min(m_tempBirthList.size(), m_tempBirthInfoList.size());
 	for (size_t b = 0; b < birthCount; ++b)
 	{
-		const auto& position = birthList[b];
-		const auto& gene = birthInfoList[b];
+		const auto& position = m_tempBirthList[b];
+		const auto& gene = m_tempBirthInfoList[b];
 
 		auto& cell = m_cellBoard[position.y][position.x];
 
@@ -140,40 +147,62 @@ void World::update()
 		}
 		else if (cell->getGene() != gene)
 		{
-			// 새로운 유전자 생성
-			Gene newGene = *cell->getGene();
-			newGene.combine(*gene);
+			if (cell->getGene()->equals(*gene))
+			{
+				cell->reset(gene);
+			}
+			else
+			{
+				// 새로운 유전자 생성
+				Gene newGene = *cell->getGene();
+				newGene.combine(*gene);
 
-			m_geneList.emplace_back(std::move(newGene));
+				const auto* geneInList = addGene(std::move(newGene));
 
-			// The newGene is invalid now.
+				// 'newGene' is invalid now.
 
-			cell->reset(&m_geneList[m_geneList.size() - 1]);
+				cell->reset(geneInList);
+			}
 		}
 	}
 
 	// 발생한 죽음 이벤트 적용
-	const size_t deathCount = deathList.size();
+	const size_t deathCount = m_tempDeathList.size();
 	for (size_t d = 0; d < deathCount; ++d)
 	{
 		// deathList의 인덱스들은 정렬된 상태임.
 
-		size_t index = deathList[d] - d;
-		
+		size_t index = m_tempDeathList[d] - d;
+
 		clearCell(m_cellList[index]);
 
 		m_cellList.erase(m_cellList.begin() + index);
 	}
+
+
+	// 임시 리스트 초기화
+	m_tempDeathList.clear();
+	m_tempBirthList.clear();
+	m_tempBirthInfoList.clear();
 }
 
 //###########################################################################
 
 const Gene* World::addGene(const Gene& gene)
 {
-	m_geneList.emplace_back(gene);
+	int overlapIndex = checkGeneOverlap(gene);
+
+	if (overlapIndex < 0)
+	{
+		m_geneList.emplace_back(std::make_unique<Gene>(gene));
 
 
-	return &m_geneList[m_geneList.size() - 1];
+		return m_geneList[m_geneList.size() - 1].get();
+	}
+	else
+	{
+		return m_geneList[overlapIndex].get();
+	}
 }
 
 
@@ -181,7 +210,7 @@ void World::setCell(const Gene* gene, const Point& position)
 {
 	if (m_cellBoard[position.y][position.x] == nullptr)
 	{
-		m_cellBoard[position.y][position.x] = std::make_unique<Cell>(gene);
+		m_cellBoard[position.y][position.x] = m_cellPool.acquireCell(gene);
 		m_cellList.emplace_back(position);
 	}
 	else
@@ -195,7 +224,26 @@ void World::clearCell(const Point& position)
 {
 	if (m_cellBoard[position.y][position.x] != nullptr)
 	{
+		m_cellPool.releaseCell(m_cellBoard[position.y][position.x]);
 		m_cellBoard[position.y][position.x].reset();
 	}
+}
+
+//###########################################################################
+
+int World::checkGeneOverlap(const Gene& gene) const
+{
+	const int geneCount = static_cast<int>(m_geneList.size());
+
+	for (int g = 0; g < geneCount; ++g)
+	{
+		if (m_geneList[g]->equals(gene))
+		{
+			return g;
+		}
+	}
+
+
+	return -1;
 }
 

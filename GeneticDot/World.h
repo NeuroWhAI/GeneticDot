@@ -7,6 +7,7 @@
 #include <CodeAdapter\Point.h>
 
 #include "Gene.h"
+#include "CellPool.h"
 
 
 
@@ -29,9 +30,16 @@ public:
 
 
 protected:
-	std::vector<Gene> m_geneList;
-	BoardType<std::unique_ptr<Cell>> m_cellBoard;
+	std::vector<std::unique_ptr<Gene>> m_geneList;
+	BoardType<std::shared_ptr<Cell>> m_cellBoard;
 	std::vector<Point> m_cellList;
+
+
+private:
+	CellPool m_cellPool;
+	std::vector<size_t> m_tempDeathList;
+	std::vector<Point> m_tempBirthList;
+	std::vector<const Gene*> m_tempBirthInfoList;
 
 
 public:
@@ -43,5 +51,9 @@ public:
 	const Gene* addGene(const Gene& gene);
 	void setCell(const Gene* gene, const Point& position);
 	void clearCell(const Point& position);
+
+
+protected:
+	int checkGeneOverlap(const Gene& gene) const;
 };
 

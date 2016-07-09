@@ -2,6 +2,9 @@
 
 #include <CodeAdapter\EasyCA.h>
 
+#include "Cell.h"
+#include "Gene.h"
+
 
 
 
@@ -20,21 +23,13 @@ void DrawableWorld::onDraw(Graphics& g, const Transform& parentTransform)
 
 	rectArtist->beginFillRectangle();
 
-	const int height = m_cellBoard.size();
-
-	for (int y = 0; y < height; ++y)
+	for (const auto& cell : m_cellList)
 	{
-		const int width = m_cellBoard[y].size();
+		const auto* gene = m_cellBoard[cell.y][cell.x]->getGene();
 
-		for (int x = 0; x < width; ++x)
-		{
-			if (m_cellBoard[y][x] != nullptr)
-			{
-				rectArtist->fillRectangle(x * m_cellSize, y * m_cellSize,
-					m_cellSize, m_cellSize,
-					caDraw::Color::Gray);
-			}
-		}
+		rectArtist->fillRectangle(cell.x * m_cellSize, cell.y * m_cellSize,
+			m_cellSize, m_cellSize,
+			gene->getColor());
 	}
 
 	rectArtist->endFillRectangle();

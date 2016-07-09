@@ -40,29 +40,30 @@ void MainScene::onInitialize(caDraw::Window& owner)
 	addPanel(m_panel);
 
 
-	m_world->initialize(64);
-	m_world->setCellSize(10);
+	m_world->initialize(400);
+	m_world->setCellSize(2);
+
 
 	Gene conwaysGene;
 
 	Rule conwaysRule{ 8 };
 	conwaysRule.setSurvive({ 2, 3 });
-	conwaysRule.setBirth({ 3 });
+	conwaysRule.setBirth({ 3, -3, -4, -5 });
 
 	conwaysGene.appendUnit(conwaysRule, 1000);
 
-	const auto* gene = m_world->addGene(conwaysGene);
+	const auto* conwaysGenePtr = m_world->addGene(conwaysGene);
 
 	// Blinker
-	m_world->setCell(gene, { 8, 4 });
-	m_world->setCell(gene, { 8, 5 });
-	m_world->setCell(gene, { 8, 6 });
+	m_world->setCell(conwaysGenePtr, { 8, 4 });
+	m_world->setCell(conwaysGenePtr, { 8, 5 });
+	m_world->setCell(conwaysGenePtr, { 8, 6 });
 
 	// Block
-	m_world->setCell(gene, { 16, 4 });
-	m_world->setCell(gene, { 16, 5 });
-	m_world->setCell(gene, { 17, 4 });
-	m_world->setCell(gene, { 17, 5 });
+	m_world->setCell(conwaysGenePtr, { 16, 4 });
+	m_world->setCell(conwaysGenePtr, { 16, 5 });
+	m_world->setCell(conwaysGenePtr, { 17, 4 });
+	m_world->setCell(conwaysGenePtr, { 17, 5 });
 
 	// Gosper glider gun
 	char gunBlueprint[11][64] = {
@@ -87,9 +88,44 @@ void MainScene::onInitialize(caDraw::Window& owner)
 		{
 			if (gunBlueprint[y][x] != '0')
 			{
-				m_world->setCell(gene, { x, y + 16 });
+				m_world->setCell(conwaysGenePtr, { x, y + 16 });
 			}
 		}
+	}
+
+
+	Gene otherGene;
+
+	Rule otherRule{ 8 };
+	otherRule.setSurvive({ 2, 4, 5 });
+	otherRule.setBirth({ 3, 6, 8 });
+
+	otherGene.appendUnit(otherRule, 1000);
+
+	const auto* otherGenePtr = m_world->addGene(otherGene);
+
+	for (int i = 0; i < 8; ++i)
+	{
+		m_world->setCell(otherGenePtr, { 16, 47 + i });
+		m_world->setCell(otherGenePtr, { 17, 47 + i });
+		m_world->setCell(otherGenePtr, { 18, 47 + i });
+	}
+
+	for (int i = 0; i < 16; ++i)
+	{
+		m_world->setCell(otherGenePtr, { 19 + i, 47 });
+	}
+
+	for (int i = 0; i < 8; ++i)
+	{
+		m_world->setCell(otherGenePtr, { 40, 50 + i });
+		m_world->setCell(otherGenePtr, { 41, 50 + i });
+		m_world->setCell(otherGenePtr, { 43, 50 + i });
+	}
+
+	for (int i = 0; i < 16; ++i)
+	{
+		m_world->setCell(otherGenePtr, { 44 + i, 50 });
 	}
 }
 
