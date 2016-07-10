@@ -2,6 +2,7 @@
 
 
 #include <vector>
+#include <random>
 
 
 
@@ -28,6 +29,10 @@ protected:
 	int m_maxNearCount;
 	RuleType m_survive;
 	RuleType m_birth, m_antiBirth;
+
+
+public:
+	void initializeRandomly(std::mt19937& engine, int maxNearCount);
 
 
 public:

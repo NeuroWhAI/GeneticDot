@@ -14,6 +14,48 @@ Gene::Gene()
 
 //###########################################################################
 
+void Gene::initializeRandomly(std::mt19937& engine, int maxNearCount)
+{
+	m_gene.clear();
+
+
+	std::normal_distribution<> sizeDist{ 1.0, 32.0 };
+
+	double dSize = sizeDist(engine);
+	int size = 0;
+	if (dSize < 1)
+		size = 1;
+	else if (dSize > 128)
+		size = 128;
+	else
+		size = static_cast<int>(dSize);
+
+	
+	std::normal_distribution<> delayDist{ 1000.0, 1000000.0 };
+
+	for (int i = 0; i < size; ++i)
+	{
+		Unit unit;
+
+		double dDelay = delayDist(engine);
+		if (dDelay < 1)
+			unit.delay = 1;
+		else if (dDelay > 4000000)
+			unit.delay = 4000000;
+		else
+			unit.delay = static_cast<int>(dDelay);
+
+		unit.rule.initializeRandomly(engine, maxNearCount);
+
+		m_gene.emplace_back(unit);
+	}
+
+
+	updateColor();
+}
+
+//###########################################################################
+
 bool Gene::checkSurvive(int step, int nearCount) const
 {
 #ifdef _DEBUG
@@ -123,6 +165,14 @@ void Gene::combine(const Gene& other)
 	{
 		m_gene[g].rule = m_gene[g].rule.combine(other.m_gene[g].rule);
 		m_gene[g].delay = (m_gene[g].delay + other.m_gene[g].delay) / 2;
+	}
+
+
+	if (m_gene.size() < other.m_gene.size())
+	{
+		m_gene.insert(m_gene.end(),
+			other.m_gene.begin() + minSize,
+			other.m_gene.end());
 	}
 
 

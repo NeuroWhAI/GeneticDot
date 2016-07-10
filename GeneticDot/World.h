@@ -44,6 +44,7 @@ private:
 
 public:
 	void initialize(int boardSize);
+	void initializeRandomly(int boardSize, unsigned int seed);
 	void update();
 
 

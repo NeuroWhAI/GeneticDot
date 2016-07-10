@@ -26,11 +26,65 @@ void World::initialize(int boardSize)
 #endif
 
 
+	m_geneList.clear();
+	m_cellBoard.clear();
+	m_cellList.clear();
+
+	m_tempDeathList.clear();
+	m_tempBirthList.clear();
+	m_tempBirthInfoList.clear();
+
+
 	m_cellBoard.resize(static_cast<size_t>(boardSize));
 
 	for (auto& arr : m_cellBoard)
 	{
 		arr.resize(static_cast<size_t>(boardSize));
+	}
+}
+
+
+void World::initializeRandomly(int boardSize, unsigned int seed)
+{
+#ifdef _DEBUG
+	assert(boardSize >= 32);
+#endif
+
+
+	initialize(boardSize);
+
+
+	std::mt19937 engine{ seed };
+
+
+	std::uniform_int_distribution<> geneCountDist{ 1, std::max(boardSize / 8, 1) };
+
+	const int geneCount = geneCountDist(engine);
+
+
+	std::uniform_int_distribution<> cellCountDist{ 1, std::max(boardSize / 64, 1) };
+
+
+	std::uniform_int_distribution<> positionDist{ 0, boardSize - 1 };
+
+
+	for (int g = 0; g < geneCount; ++g)
+	{
+		m_geneList.emplace_back(std::make_unique<Gene>());
+		m_geneList[g]->initializeRandomly(engine, 8);
+
+		const Gene* gene = m_geneList[g].get();
+
+
+		const int cellCount = cellCountDist(engine);
+
+		for (int c = 0; c < cellCount; ++c)
+		{
+			int x = positionDist(engine);
+			int y = positionDist(engine);
+
+			setCell(gene, Point(x, y));
+		}
 	}
 }
 

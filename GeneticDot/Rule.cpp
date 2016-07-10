@@ -25,6 +25,23 @@ Rule::Rule(int maxNearCount)
 
 //###########################################################################
 
+void Rule::initializeRandomly(std::mt19937& engine, int maxNearCount)
+{
+	setMaxNearCount(maxNearCount);
+
+
+	std::uniform_int_distribution<int> bitDist{ 0, 1 };
+
+	for (int i = 0; i < m_maxNearCount; ++i)
+	{
+		m_survive[i] = bitDist(engine);
+		m_birth[i] = bitDist(engine);
+		m_antiBirth[i] = bitDist(engine);
+	}
+}
+
+//###########################################################################
+
 int Rule::getMaxNearCount() const
 {
 	return m_maxNearCount;

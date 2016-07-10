@@ -2,6 +2,7 @@
 
 
 #include <vector>
+#include <random>
 
 #include "Rule.h"
 
@@ -45,6 +46,10 @@ protected:
 
 protected:
 	Color m_color;
+
+
+public:
+	void initializeRandomly(std::mt19937& engine, int maxNearCount);
 
 
 public:
